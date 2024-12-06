@@ -2,8 +2,8 @@
   <common-layout>
     <div class="top">
       <div class="header">
-        <img alt="logo" class="logo" src="@/assets/img/logo.png" />
-        <span class="title">{{systemName}}</span>
+        <img alt="logo" class="logo" src="@/assets/img/logo.png"/>
+        <span class="title">{{ systemName }}</span>
       </div>
       <div class="desc">Ant Design 是西湖区最具影响力的 Web 设计规范</div>
     </div>
@@ -17,7 +17,8 @@
                 autocomplete="autocomplete"
                 size="large"
                 placeholder="admin"
-                v-decorator="['name', {rules: [{ required: true, message: '请输入账户名', whitespace: true}]}]"
+                type="userName"
+                v-decorator="['userName', {rules: [{ required: true, message: '请输入账户名', whitespace: true}]}]"
               >
                 <a-icon slot="prefix" type="user" />
               </a-input>
@@ -36,15 +37,15 @@
           </a-tab-pane>
           <a-tab-pane tab="手机号登录" key="2">
             <a-form-item>
-              <a-input size="large" placeholder="mobile number" >
-                <a-icon slot="prefix" type="mobile" />
+              <a-input size="large" placeholder="mobile number">
+                <a-icon slot="prefix" type="mobile"/>
               </a-input>
             </a-form-item>
             <a-form-item>
               <a-row :gutter="8" style="margin: 0 -4px">
                 <a-col :span="16">
                   <a-input size="large" placeholder="captcha">
-                    <a-icon slot="prefix" type="mail" />
+                    <a-icon slot="prefix" type="mail"/>
                   </a-input>
                 </a-col>
                 <a-col :span="8" style="padding-left: 4px">
@@ -55,18 +56,20 @@
           </a-tab-pane>
         </a-tabs>
         <div>
-          <a-checkbox :checked="true" >自动登录</a-checkbox>
+          <a-checkbox :checked="true">自动登录</a-checkbox>
           <a style="float: right">忘记密码</a>
         </div>
         <a-form-item>
-          <a-button :loading="logging" style="width: 100%;margin-top: 24px" size="large" htmlType="submit" type="primary">登录</a-button>
+          <a-button :loading="logging" style="width: 100%;margin-top: 24px" size="large" htmlType="submit"
+                    type="primary">登录
+          </a-button>
         </a-form-item>
         <div>
           其他登录方式
-          <a-icon class="icon" type="alipay-circle" />
-          <a-icon class="icon" type="taobao-circle" />
-          <a-icon class="icon" type="weibo-circle" />
-          <router-link style="float: right" to="/dashboard/workplace" >注册账户</router-link>
+          <a-icon class="icon" type="alipay-circle"/>
+          <a-icon class="icon" type="taobao-circle"/>
+          <a-icon class="icon" type="weibo-circle"/>
+          <router-link style="float: right" to="/dashboard/workplace">注册账户</router-link>
         </div>
       </a-form>
     </div>
@@ -75,7 +78,7 @@
 
 <script>
 import CommonLayout from '@/layouts/CommonLayout'
-import {login, getRoutesConfig} from '@/services/user'
+import {login, getRoutesConfig} from '@/services/user' // 导入login和getRoutesConfig
 import {setAuthorization} from '@/utils/request'
 import {loadRoutes} from '@/utils/routerUtil'
 import {mapMutations} from 'vuex'
@@ -83,7 +86,7 @@ import {mapMutations} from 'vuex'
 export default {
   name: 'Login',
   components: {CommonLayout},
-  data () {
+  data() {
     return {
       logging: false,
       error: '',
@@ -91,39 +94,37 @@ export default {
     }
   },
   computed: {
-    systemName () {
+    systemName() {
       return this.$store.state.setting.systemName
     }
   },
   methods: {
     ...mapMutations('account', ['setUser', 'setPermissions', 'setRoles']),
-    onSubmit (e) {
+    onSubmit(e) {
       e.preventDefault()
       this.form.validateFields((err) => {
         if (!err) {
           this.logging = true
-          const name = this.form.getFieldValue('name')
+          const userName = this.form.getFieldValue('userName')
           const password = this.form.getFieldValue('password')
-          login(name, password).then(this.afterLogin)
+          login(userName, password).then(this.afterLogin)
         }
       })
     },
-    afterLogin(res) {
+    async afterLogin(res) {
       this.logging = false
       const loginRes = res.data
-      if (loginRes.code >= 0) {
+      if (loginRes.code === 0) {
         const {user, permissions, roles} = loginRes.data
         this.setUser(user)
         this.setPermissions(permissions)
         this.setRoles(roles)
         setAuthorization({token: loginRes.data.token, expireAt: new Date(loginRes.data.expireAt)})
         // 获取路由配置
-        getRoutesConfig().then(result => {
-          const routesConfig = result.data.data
-          loadRoutes(routesConfig)
-          this.$router.push('/dashboard/workplace')
-          this.$message.success(loginRes.message, 3)
-        })
+        const routesConfig = await getRoutesConfig() // 获取路由配置
+        loadRoutes(routesConfig)
+        this.$router.push('/dashboard/workplace')
+        this.$message.success(loginRes.message, 3)
       } else {
         this.error = loginRes.message
       }

@@ -35,17 +35,29 @@ const assetsCDN = {
 }
 
 module.exports = {
+  // devServer: {
+  //   // proxy: {
+  //   //   '/api': { //此处要与 /services/api.js 中的 API_PROXY_PREFIX 值保持一致
+  //   //     target: process.env.VUE_APP_API_BASE_URL,
+  //   //     changeOrigin: true,
+  //   //     pathRewrite: {
+  //   //       '^/api': ''
+  //   //     }
+  //   //   }
+  //   // }
+  // },
   devServer: {
-    // proxy: {
-    //   '/api': { //此处要与 /services/api.js 中的 API_PROXY_PREFIX 值保持一致
-    //     target: process.env.VUE_APP_API_BASE_URL,
-    //     changeOrigin: true,
-    //     pathRewrite: {
-    //       '^/api': ''
-    //     }
-    //   }
-    // }
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8083',  // 后端服务的地址
+        changeOrigin: true,
+        pathRewrite: {
+          '^/api': ''  // 去掉 /api 前缀，转发给后端
+        }
+      }
+    }
   },
+
   pluginOptions: {
     'style-resources-loader': {
       preProcessor: 'less',
