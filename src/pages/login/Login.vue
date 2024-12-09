@@ -66,12 +66,12 @@
           <a style="float: right">忘记密码</a>
         </div>
         <a-form-item>
-          <a-button :loading="logging" style="width: 100%;margin-top: 24px" size="large" htmlType="submit"
-                    type="primary">登录
+          <a-button :loading="logging" style="width: 100%;margin-top: 24px" size="large" htmlType="submit" type="primary">登录
           </a-button>
         </a-form-item>
         <div>
-          <router-link style="float: right" to="/dashboard/workplace">注册账户</router-link>
+<!--          <router-link style="float: right" to="/dashboard/workplace">注册账户</router-link>-->
+          <a-button style="float: right; margin-top: 10px;" size="middle" type="default" @click="goToRegister">注册账户</a-button>
         </div>
       </a-form>
     </div>
@@ -191,6 +191,11 @@ export default {
         // 如果后端返回错误，显示错误信息
         this.error = loginRes.message || '账户名或密码错误';
       }
+    },
+    // 新增的注册跳转方法
+    goToRegister() {
+      console.log('跳转到注册页面');
+      this.$router.push('/register'); // 确保你有一个 "/register" 的路由配置
     }
   }
 }

@@ -28,13 +28,29 @@ const progressStart = (to, from, next) => {
  */
 const loginGuard = (to, from, next, options) => {
   const {message} = options
-  if (!loginIgnore.includes(to) && !checkAuthorization()) {
+  if (!loginIgnore.includes(to) && !checkAuthorization() && !to.path === '/register') {
     message.warning('登录已失效，请重新登录')
     next({path: '/login'})
   } else {
     next()
   }
 }
+
+// const loginGuard = (to, from, next, options) => {
+//   const { message } = options
+//   // 排除从 '/login' 跳转到 '/register' 的情况，避免死循环
+//   if (to.path === '/register') {
+//     return next()  // 允许跳转到注册页面
+//   }
+//
+//   // 如果目标路由不是登录页面，并且没有通过授权检查，则跳转到登录页面
+//   if (!loginIgnore.includes(to.path) && !checkAuthorization()) {
+//     message.warning('登录已失效，请重新登录')
+//     next({ path: '/login' })  // 跳转到登录页
+//   } else {
+//     next()  // 继续跳转
+//   }
+// }
 
 /**
  * 权限守卫
