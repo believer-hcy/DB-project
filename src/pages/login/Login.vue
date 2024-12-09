@@ -10,7 +10,7 @@
     <div class="login">
       <a-form @submit="onSubmit" :form="form">
         <a-tabs size="large" :tabBarStyle="{textAlign: 'center'}" style="padding: 0 2px;">
-          <a-tab-pane tab="账户密码登录" key="1">
+          <a-tab-pane tab="学生登录" key="1">
             <a-alert type="error" :closable="true" v-show="error" :message="error" showIcon style="margin-bottom: 24px;" />
             <a-form-item>
               <a-input
@@ -35,23 +35,29 @@
               </a-input>
             </a-form-item>
           </a-tab-pane>
-          <a-tab-pane tab="手机号登录" key="2">
+          <a-tab-pane tab="教师登录" key="2">
+            <a-alert type="error" :closable="true" v-show="error" :message="error" showIcon style="margin-bottom: 24px;" />
             <a-form-item>
-              <a-input size="large" placeholder="mobile number">
-                <a-icon slot="prefix" type="mobile"/>
+              <a-input
+                autocomplete="autocomplete"
+                size="large"
+                placeholder="admin"
+                type="userName"
+                v-decorator="['userName', {rules: [{ required: true, message: '请输入账户名', whitespace: true}]}]"
+              >
+                <a-icon slot="prefix" type="user" />
               </a-input>
             </a-form-item>
             <a-form-item>
-              <a-row :gutter="8" style="margin: 0 -4px">
-                <a-col :span="16">
-                  <a-input size="large" placeholder="captcha">
-                    <a-icon slot="prefix" type="mail"/>
-                  </a-input>
-                </a-col>
-                <a-col :span="8" style="padding-left: 4px">
-                  <a-button style="width: 100%" class="captcha-button" size="large">获取验证码</a-button>
-                </a-col>
-              </a-row>
+              <a-input
+                size="large"
+                placeholder="888888"
+                autocomplete="autocomplete"
+                type="password"
+                v-decorator="['password', {rules: [{ required: true, message: '请输入密码', whitespace: true}]}]"
+              >
+                <a-icon slot="prefix" type="lock" />
+              </a-input>
             </a-form-item>
           </a-tab-pane>
         </a-tabs>
@@ -65,10 +71,6 @@
           </a-button>
         </a-form-item>
         <div>
-          其他登录方式
-          <a-icon class="icon" type="alipay-circle"/>
-          <a-icon class="icon" type="taobao-circle"/>
-          <a-icon class="icon" type="weibo-circle"/>
           <router-link style="float: right" to="/dashboard/workplace">注册账户</router-link>
         </div>
       </a-form>
@@ -78,10 +80,52 @@
 
 <script>
 import CommonLayout from '@/layouts/CommonLayout'
-import {login, getRoutesConfig} from '@/services/user' // 导入login和getRoutesConfig
+import {login} from '@/services/user' // 导入login和getRoutesConfig
 import {setAuthorization} from '@/utils/request'
 import {loadRoutes} from '@/utils/routerUtil'
 import {mapMutations} from 'vuex'
+
+import Mock from 'mockjs';
+// Mock 数据（模拟的用户信息）
+const user = Mock.mock({
+  name: '@ADMIN',
+  avatar: '@AVATAR',
+  address: '@CITY',
+  position: '@POSITION'
+});
+const mockRoutesConfig = [{
+  router: 'root',
+  children: [
+    {
+      router: 'dashboard',
+      children: ['workplace', 'analysis'],
+    },
+    {
+      router: 'form',
+      children: ['basicForm', 'stepForm', 'advanceForm']
+    },
+    {
+      router: 'basicForm',
+      name: '验权表单',
+      icon: 'file-excel',
+      authority: 'queryForm'
+    },
+    {
+      router: 'antdv',
+      path: 'antdv',
+      name: 'Ant Design Vue',
+      icon: 'ant-design',
+      link: 'https://www.antdv.com/docs/vue/introduce-cn/'
+    },
+    {
+      router: 'document',
+      path: 'document',
+      name: '使用文档',
+      icon: 'file-word',
+      link: 'https://iczer.gitee.io/vue-antd-admin-docs/'
+    }
+  ]
+}];
 
 export default {
   name: 'Login',
@@ -112,21 +156,40 @@ export default {
       })
     },
     async afterLogin(res) {
-      this.logging = false
-      const loginRes = res.data
-      if (loginRes.code === 0) {
-        const {user, permissions, roles} = loginRes.data
-        this.setUser(user)
-        this.setPermissions(permissions)
-        this.setRoles(roles)
-        setAuthorization({token: loginRes.data.token, expireAt: new Date(loginRes.data.expireAt)})
+      this.logging = false;
+
+      // 获取登录返回结果
+      const loginRes = res.data;
+      console.log(loginRes.code);
+
+      if (loginRes.code === 200) {
+        // 从后端返回的数据中提取 token 和其他信息
+        const { tokenHead, token } = loginRes.data;
+
+        // 如果后端没有提供完整的用户信息，使用 Mock 数据填充
+        const userData = loginRes.data.user || user; // 如果后端没有提供 user，则使用 Mock 的数据
+        // （模拟数据或从后端获取）
+        const permissions = loginRes.data.permissions || [{ id: 'queryForm', operation: ['add', 'edit'] }];
+        const roles = loginRes.data.roles || [{ id: 'admin', operation: ['add', 'edit', 'delete'] }];
+        const expireAt = new Date(new Date().getTime() + 30 * 60 * 1000)
+
+        // 设置用户信息、权限、角色
+        this.setUser(userData);
+        this.setPermissions(permissions);
+        this.setRoles(roles);
+
+        setAuthorization({ token: `${tokenHead} ${token}`, expireAt });
+
+        console.log("getRoutesConfig")
         // 获取路由配置
-        const routesConfig = await getRoutesConfig() // 获取路由配置
+        const routesConfig = mockRoutesConfig
         loadRoutes(routesConfig)
         this.$router.push('/dashboard/workplace')
         this.$message.success(loginRes.message, 3)
+
       } else {
-        this.error = loginRes.message
+        // 如果后端返回错误，显示错误信息
+        this.error = loginRes.message || '账户名或密码错误';
       }
     }
   }
